@@ -1,6 +1,4 @@
 [build]
-  publish = "docs/.vitepress/dist"
   command = "npm run docs:build"
-
-[context.production]
-  environment = { NODE_VERSION = "20" }
+  publish = "docs/.vitepress/dist"
+  node_version = "20"

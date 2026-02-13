@@ -4,7 +4,6 @@ export default defineConfig({
   title: "MagicWord",
   description: "全栈式 AI 背词解决方案",
   lang: 'zh-CN',
-  // base: '/MagicWordDocs/', // Repository name - REMOVED for custom domain
   
   themeConfig: {
     nav: [
@@ -33,7 +32,7 @@ export default defineConfig({
       {
         text: '其他',
         items: [
-          { text: '常见问题', link: '/guide/faq' }
+          { text: '设置与常见问题', link: '/guide/faq' }
         ]
       }
     ],
