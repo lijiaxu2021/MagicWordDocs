@@ -45,7 +45,8 @@ export default defineConfig({
         {
           text: '其他',
           items: [
-            { text: '设置与常见问题', link: '/guide/faq' }
+            { text: '⚙️ 设置与配置', link: '/guide/settings' },
+            { text: '常见问题 (FAQ)', link: '/guide/faq' }
           ]
         }
       ]

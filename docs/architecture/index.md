@@ -1,26 +1,24 @@
 # 系统架构概览
 
-本文档详细介绍了 MagicWord 的三层无服务器架构、组件交互以及数据流模式。
+本文档详细介绍了 MagicWord 的三层无服务器架构、数据流模式以及独特的更新系统设计。
 
-## 架构概览
+## 三层无服务器架构 (Three-Tier Serverless Architecture)
 
-MagicWord 采用 **三层无服务器架构 (Three-Tier Serverless Architecture)**，在消除传统后端数据库成本的同时，提供了完整的词库管理和共享能力。
+MagicWord 采用创新的无服务器架构，在消除传统后端数据库成本的同时，提供了完整的词库管理和共享能力。
 
-### 系统分层
+### 1. 客户端层 (Client Tier)
+*   **Android App**: 采用 MVVM 架构的 Native 应用，负责所有用户交互、本地数据持久化 (Room) 和业务逻辑处理。客户端是“重”客户端，核心功能（单词管理、复习算法）完全本地化，不依赖网络。
 
-1.  **第一层：Android 客户端 (Tier 1)**
-    *   **职责**: 处理所有用户交互、本地数据持久化 (Room Database) 和应用状态管理。
-    *   **特性**: 客户端是一个自包含单元，核心功能（单词管理、复习）可完全离线运行。
-    *   **架构**: 采用 MVVM (Model-View-ViewModel) 架构，基于 Jetpack Compose 构建 UI。
+### 2. 边缘代理层 (Edge Proxy Tier)
+*   **Cloudflare Workers**: 充当智能 API 网关。
+    *   **职责**: 处理 CORS、路由分发、Key-Kit 验证。
+    *   **优势**: 全球边缘部署，低延迟，免费额度高。
 
-2.  **第二层：云基础设施 (Tier 2)**
-    *   **Cloudflare Workers**: 充当智能 API 网关和代理层，处理跨域 (CORS) 问题，路由请求，并作为轻量级后端逻辑层。
-    *   **GitHub Data Warehouse**: 利用 GitHub 仓库 (`magicwordfile`) 作为版本控制的数据库，利用 GitHub Pages 进行静态内容分发 (CDN)。
-    *   **GitHub Actions**: 充当计算层，负责在词库上传时自动生成索引 (`index.json`) 和元数据 (`tags.json`)。
-
-3.  **第三层：外部服务 (Tier 3)**
-    *   **AI 服务**: 直接连接 SiliconFlow (Qwen2.5-7B-Instruct) 等 AI 提供商，用于生成单词释义和例句。
-    *   **应用分发**: 通过 GitHub Releases 托管 APK 安装包和版本管理。
+### 3. 数据仓库层 (Data Warehouse Tier)
+*   **GitHub Repository**: 作为 NoSQL 数据库使用。
+    *   **存储**: `magicwordfile` 仓库存储 JSON 格式的词库数据。
+    *   **计算**: GitHub Actions 充当触发器，自动生成索引和聚合数据。
+    *   **分发**: GitHub Pages/Raw CDN 负责静态内容的高速分发。
 
 ## 数据流模式 (Data Flow Patterns)
 
@@ -46,13 +44,19 @@ MagicWord 采用 **三层无服务器架构 (Three-Tier Serverless Architecture)
 *   使用 `flatMapLatest` 动态查询数据库中符合 SM-2 算法复习时间的单词。
 *   任何上游状态变化都会自动触发重新查询。
 
-## 无服务器架构设计 (Serverless Design)
+## 更新系统架构 (Update System)
 
-### 为什么选择 Serverless?
-MagicWord 通过以下设计消除了传统 VPS 和数据库成本：
-*   **API 网关**: Cloudflare Workers (免费额度极大)。
-*   **数据库**: GitHub Repository (免费存储，Git 版本控制)。
-*   **计算**: GitHub Actions (每月 2000 分钟免费构建时间)。
-*   **CDN**: GitHub Pages (全球免费分发)。
+MagicWord 拥有独立的自更新机制，不依赖应用商店。
 
-这种架构在用户量增长时具有极高的成本效益和扩展性。
+### 1. 版本检测
+*   应用启动时，`UpdateManager` 通过 Cloudflare Worker 请求 GitHub Releases API (`/api/repos/.../releases/latest`)。
+*   对比本地 `BuildConfig.VERSION_NAME` 和远程 Tag 名称（语义化版本比较）。
+
+### 2. 差异化下载
+*   如果发现新版本，直接从 `mag.upxuu.com/MagicWordLatest.apk` 下载。
+*   Worker 会将其重定向到 GitHub Releases 的最新 Assets，并处理跨域问题。
+
+### 3. 权限安全
+*   针对 Android 8.0+，自动检测 `REQUEST_INSTALL_PACKAGES` 权限。
+*   如果未授权，引导用户跳转到系统设置页开启“允许安装未知来源应用”。
+*   使用 `FileProvider` 安全地共享下载的 APK 文件给系统安装器。

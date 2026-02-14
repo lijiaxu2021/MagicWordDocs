@@ -1,53 +1,74 @@
-# AI 辅助功能与配置
+# AI 辅助功能 (AI Integration)
 
-MagicWord 深度集成了生成式 AI，彻底告别手动输入释义的繁琐。应用支持通过 Key-Kit 快速配置，也支持高级用户手动设置。
+MagicWord 深度集成了生成式 AI，彻底告别手动输入释义的繁琐。应用使用 **Qwen2.5-7B-Instruct** 等大语言模型，自动生成单词的详细解释、音标、例句和记忆方法。
 
-## 初始化配置
+## 1. 自动录入 (Auto Entry)
 
-首次打开应用时，您将看到初始化界面，有两种配置方式：
+这是最常用的 AI 功能，适用于快速添加生词。
 
-### 1. Key-Kit 快速配置 (推荐)
-如果您从管理员处获得了 **Key-Kit 密钥** (例如 `vip-001`)，这是最简单的配置方式。
+### 操作流程
+1.  在主界面顶部的 **搜索框** 中输入一个英文单词（例如 "serendipity"）。
+2.  点击键盘上的 **回车/搜索** 键。
+3.  **智能判断**:
+    *   如果本地词库已存在该词，会自动跳转到该单词卡片。
+    *   如果本地不存在，系统会自动发起 **AI 请求**。
+4.  **AI 生成**: 约 1-3 秒后，单词自动入库，包含：
+    *   **中文释义**: 结合语境的精准翻译。
+    *   **音标**: 标准 IPA 音标。
+    *   **例句**: 中英对照例句。
+    *   **记忆法**: 词根词缀拆解或联想记忆。
 
-1.  **输入密钥**: 在初始化界面的 "Key-Kit 初始化" 输入框中输入密钥。
-2.  **点击验证**: 系统将自动从云端获取您的专属配置（包括 API Key、AI 模型等）。
-3.  **自动初始化**: 验证成功后，App 会自动下载默认词库并完成所有设置。
+## 2. 批量导入 (Bulk Import)
 
-### 2. 手动配置 (高级)
-如果您没有 Key-Kit，或者想使用自己的 API 服务：
+适用于从文章、教材中整理单词表。
 
-1.  点击 "手动配置 (高级)"。
-2.  **API Key**: 输入您的 OpenAI 格式 API Key (`sk-...`)。
-3.  **Model Name**: 输入模型名称 (默认为 `Qwen/Qwen2.5-7B-Instruct`)。
-4.  点击保存即可。
+### 智能分块处理
+为了防止 AI 超时或遗漏，MagicWord 采用了 **分块 (Chunking)** 处理机制：
+1.  您输入的 100 个单词会被自动拆分为多个小批次（每批 3-5 个）。
+2.  App 并行发送多个请求。
+3.  **自动重试**: 如果某一批次失败，系统会自动重试 3 次。
+4.  **实时反馈**: 导入面板下方会实时显示进度日志（如 "Processing chunk 1/20..."）。
 
-## 后期修改配置
+### 短语保护
+系统会自动识别多词短语（如 "give up"），在发送给 AI 前将其转换为下划线连接形式 ("give_up")，防止被 AI 误拆分为两个单词。
 
-无论使用哪种方式初始化，您随时可以在 **设置 (Settings)** 页面修改 AI 配置：
+## 3. 配置 AI 模型
 
-1.  **API Key**: 如果是通过 Key-Kit 获取的，通常为只读；如果是手动输入的，可以修改。
-2.  **模型名称 (Model)**: 您可以随时修改使用的 AI 模型名称 (例如 `gpt-4o`, `deepseek-chat` 等)，以获得更好的翻译效果或节省成本。
-3.  **Key-Kit 更新**: 如果您获得了新的 Key-Kit，也可以在设置页面输入新密钥来更新整个配置。
+MagicWord 支持灵活的 AI 配置，满足不同用户的需求。
 
-## 功能应用
+### Key-Kit 快速配置 (推荐)
+如果您有管理员提供的 **Key-Kit** (例如 `vip-001`)：
+1.  进入 **Settings** -> **Key-Kit 初始化**。
+2.  输入 Key 并验证。
+3.  系统自动下发 API Key、模型名称和 Base URL。
+4.  **优势**: 无需手动配置复杂的参数，且支持云端动态更新模型。
 
-### 1. 自动录入 (Auto Entry)
-*   **触发**: 在主界面搜索框输入一个新单词，按回车。
-*   **流程**: 若本地无此单词，APP 会向 AI 发送指令，要求生成该单词的 JSON 数据（含释义、音标、例句）。
-*   **结果**: 生成成功后，单词自动存入数据库并显示。
+### 手动配置 (高级)
+如果您想使用自己的 API 服务（如 OpenAI, SiliconFlow）：
+1.  进入 **Settings**。
+2.  **API Key**: 输入您的 `sk-...` 密钥。
+3.  **Model Name**: 输入模型名称（如 `gpt-4o`, `deepseek-chat`）。
+4.  **User Persona**: 设置您的“用户画像”（例如“我是托福考生”），AI 会根据此画像生成更贴合您需求的例句。
 
-### 2. 批量导入 (Bulk Import)
-*   **触发**: 列表模式 -> 导入按钮。
-*   **流程**: 将您输入的单词列表一次性发送给 AI。
-*   **优势**: 相比逐个录入，批量导入效率更高，适合从文章或教材中整理单词表。
+## 4. Prompt 设计 (技术细节)
 
-### 3. 智能完善
-*   即便您只输入了单词拼写，AI 也会自动补全：
-    *   **地道的中文释义**: 结合语境的解释。
-    *   **助记方法**: 提供词根词缀分析或联想记忆法。
-    *   **实用例句**: 展示单词在句子中的实际用法。
+为了确保 AI 输出的 JSON 格式稳定可用，我们设计了严格的 Prompt：
 
-## 常见问题
+```text
+You are a strict JSON data generator. Analyze this English word: "$text"
+Return a SINGLE JSON Object.
 
-*   **生成失败**: 请检查网络连接及 API Key 余额。
-*   **响应慢**: 取决于您使用的模型服务商及网络状况。建议使用响应速度较快的模型。
+STRICT JSON FORMAT RULES:
+1. "word": String (The LEMMA/ROOT form)
+2. "phonetic": String
+3. "senses": Object (Key-Value pairs)
+   - Keys: "sense_1", "sense_2"
+   - Value: { "pos": "...", "meaning": "..." }
+4. "definition_en": String
+5. "example": String (Format: "En sentence. Cn translation.")
+6. "memory_method": String
+7. "forms": Object (past, participle, plural)
+
+IMPORTANT: Valid JSON syntax. No trailing commas.
+NO MARKDOWN. NO COMMENTS. ONLY JSON.
+```
